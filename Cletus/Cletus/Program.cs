@@ -12,17 +12,6 @@ using Action = SC2APIProtocol.Action;
 
 namespace Cletus
 {
-
-    public enum BuildingID
-    {
-        CommandCenter = 18,
-    }
-
-    public enum BuildingTrainingID
-    {
-        SCV = 524,
-    }
-
     class Program
     {
         static void Main(string[] args)
@@ -50,19 +39,17 @@ namespace Cletus
             // Runs the game to the end with the given bots / map and configuration
             Runner.run(Sc2Game.runGame(gameSettings, participants));
 
-            var x = new Observation();
-            Console.WriteLine(x.PlayerCommon.Minerals);
-
         }
 
         public static IEnumerable<Action> MasterAgent_MainLoop(GameState gameState)
         {
-            Action answer = new Action();
+            Action action = new Action();
 
-            Observation newObservation = gameState.NewObservation.Observation;
-            MapState map = newObservation.RawData.MapState;
+            Observation observation = gameState.NewObservation.Observation;
+            //MapState map = observation.RawData.MapState;
 
-            RepeatedField<Unit> allUnits = newObservation.RawData.Units;
+            RepeatedField<Unit> allUnits = observation.RawData.Units;
+            var myUnits = allUnits.Where(Unit => Unit.Owner == 1);
 
             ulong? unitTag = null;
 
@@ -70,21 +57,20 @@ namespace Cletus
 
             while (unitTag == null && i < allUnits.Count)
             {
-                if (allUnits[i].UnitType == (int)BuildingID.CommandCenter)
+                if (allUnits[i].UnitType == (uint)UNIT_TYPEID.TERRAN_COMMANDCENTER)
                 {
                     unitTag = allUnits[i].Tag;
                 }
                 i++;
             }
 
-            answer.ActionRaw = new ActionRaw();
-            answer.ActionRaw.ClearAction();
-            answer.ActionRaw.UnitCommand = new ActionRawUnitCommand();
-            answer.ActionRaw.UnitCommand.AbilityId = (int)BuildingTrainingID.SCV;
+            action.ActionRaw = new ActionRaw();
+            action.ActionRaw.ClearAction();
+            action.ActionRaw.UnitCommand = new ActionRawUnitCommand();
+            action.ActionRaw.UnitCommand.AbilityId = (int)ABILITY_ID.TRAIN_SCV;
 
-            answer.ActionRaw.UnitCommand.UnitTags.Add(unitTag.Value);
-
-            yield return answer;
+            action.ActionRaw.UnitCommand.UnitTags.Add(unitTag.Value);
+            yield return action;
         }
 
     }
