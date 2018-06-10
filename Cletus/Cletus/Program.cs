@@ -34,8 +34,18 @@ namespace Cletus
                 .WithMap(@"Ladder2017Season1\AbyssalReefLE.SC2Map")
                 .WithRealtime(true);
 
-            // Runs the game to the end with the given bots / map and configuration
-            Runner.run(Sc2Game.runGame(gameSettings, participants));
+            try
+            {
+                // Runs the game to the end with the given bots / map and configuration
+                Runner.run(Sc2Game.runGame(gameSettings, participants));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine("Press a key to exit...");
+                Console.ReadKey();
+            }
+            
 
         }
 
