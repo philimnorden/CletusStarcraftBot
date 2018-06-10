@@ -100,6 +100,33 @@ namespace Cletus
                 }
             }
 
+            // Build supply depot
+            if (myFoodFree < 5)
+            {
+                foreach (var unit in myUnits)
+                {
+                    if (unit.UnitType == (uint)UNIT_TYPEID.TERRAN_SCV)
+                    {
+                        unitTag = unit.Tag;
+                        break;
+                    }
+                }
+
+                var r = new Random();
+
+                action.ActionRaw = new ActionRaw();
+                action.ActionRaw.ClearAction();
+                action.ActionRaw.UnitCommand = new ActionRawUnitCommand();
+                action.ActionRaw.UnitCommand.AbilityId = (int)ABILITY_ID.BUILD_SUPPLYDEPOT;
+                action.ActionRaw.UnitCommand.TargetWorldSpacePos = new Point2D();
+
+                action.ActionRaw.UnitCommand.TargetWorldSpacePos.X = r.Next(1, 1000);
+                action.ActionRaw.UnitCommand.TargetWorldSpacePos.Y = r.Next(1, 1000);
+
+                action.ActionRaw.UnitCommand.UnitTags.Add(unitTag.Value);
+
+            }
+
             yield return action;
         }
 
