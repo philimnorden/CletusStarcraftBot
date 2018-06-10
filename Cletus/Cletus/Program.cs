@@ -64,8 +64,46 @@ namespace Cletus
             var myFoodCap = observation.PlayerCommon.FoodCap;
             var myFoodFree = myFoodCap - myFoodUsed;
 
-            ulong? unitTag = null;
             
+
+            ulong? unitTag = null;
+
+            //send idle workers to minerals
+            if (observation.PlayerCommon.IdleWorkerCount > 0)
+            {
+                ulong mineralTag = 0;
+
+                foreach (var unit in allUnits)
+                {
+                    if (unit.UnitType == (uint)UNIT_TYPEID.NEUTRAL_MINERALFIELD)
+                    {
+                        mineralTag = unit.Tag;
+                        break;
+                    }
+                }
+
+
+                foreach (var unit in myUnits)
+                {
+                    if (unit.UnitType == (uint)UNIT_TYPEID.TERRAN_SCV)
+                    {
+                        if (unit.Orders.Count() == 0)
+                        {
+                            
+                            action.ActionRaw = new ActionRaw();
+                            action.ActionRaw.ClearAction();
+                            action.ActionRaw.UnitCommand = new ActionRawUnitCommand();
+                            action.ActionRaw.UnitCommand.AbilityId = (int)ABILITY_ID.HARVEST_GATHER;
+                            action.ActionRaw.UnitCommand.TargetUnitTag = mineralTag;
+
+                            action.ActionRaw.UnitCommand.UnitTags.Add(unit.Tag);
+
+                        }
+                    }
+                }
+            }
+
+
             // TODO check if we want to train scv's
             if (true)
             {
@@ -101,29 +139,64 @@ namespace Cletus
             }
 
             // Build supply depot
-            if (myFoodFree < 5)
+            if (myFoodFree < 5 && myMinerals > 100)
             {
+
+                IEnumerable<UnitOrder> supplyDepotInConstruction = null;
+
                 foreach (var unit in myUnits)
                 {
                     if (unit.UnitType == (uint)UNIT_TYPEID.TERRAN_SCV)
                     {
-                        unitTag = unit.Tag;
-                        break;
+                        supplyDepotInConstruction = unit.Orders.Where(Order => Order.AbilityId == (uint)ABILITY_ID.BUILD_SUPPLYDEPOT);
+                        if(supplyDepotInConstruction.Count() != 0)
+                        {
+                            break;
+                        }
                     }
                 }
 
-                var r = new Random();
+                if (supplyDepotInConstruction.Count() == 0)
+                {
+                    foreach (var unit in myUnits)
+                    {
+                        if (unit.UnitType == (uint)UNIT_TYPEID.TERRAN_SCV)
+                        {
+                            unitTag = unit.Tag;
+                            break;
+                        }
+                    }
 
-                action.ActionRaw = new ActionRaw();
-                action.ActionRaw.ClearAction();
-                action.ActionRaw.UnitCommand = new ActionRawUnitCommand();
-                action.ActionRaw.UnitCommand.AbilityId = (int)ABILITY_ID.BUILD_SUPPLYDEPOT;
-                action.ActionRaw.UnitCommand.TargetWorldSpacePos = new Point2D();
+                    var r = new Random();
 
-                action.ActionRaw.UnitCommand.TargetWorldSpacePos.X = r.Next(1, 1000);
-                action.ActionRaw.UnitCommand.TargetWorldSpacePos.Y = r.Next(1, 1000);
+                    action.ActionRaw = new ActionRaw();
+                    action.ActionRaw.ClearAction();
+                    action.ActionRaw.UnitCommand = new ActionRawUnitCommand();
+                    action.ActionRaw.UnitCommand.AbilityId = (int)ABILITY_ID.BUILD_SUPPLYDEPOT;
+                    action.ActionRaw.UnitCommand.TargetWorldSpacePos = new Point2D();
 
-                action.ActionRaw.UnitCommand.UnitTags.Add(unitTag.Value);
+                    // get CC
+                    Unit commandCenter = null;
+                    foreach (var unit in myUnits)
+                    {
+                        // Unit is a command center
+                        if (unit.UnitType == (uint)UNIT_TYPEID.TERRAN_COMMANDCENTER)
+                        {
+                            commandCenter = unit;
+
+                        }
+                    }
+                    var BASE_SIZE = 15;
+                    var ccX = commandCenter.Pos.X + (r.Next(-1 * BASE_SIZE, BASE_SIZE));
+                    var ccY = commandCenter.Pos.Y + (r.Next(-1 * BASE_SIZE, BASE_SIZE));
+
+                    action.ActionRaw.UnitCommand.TargetWorldSpacePos.X = ccX;
+                    action.ActionRaw.UnitCommand.TargetWorldSpacePos.Y = ccY;
+
+                    action.ActionRaw.UnitCommand.UnitTags.Add(unitTag.Value);
+                }
+
+
 
             }
 
