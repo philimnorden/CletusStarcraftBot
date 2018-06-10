@@ -58,8 +58,8 @@ namespace Cletus
 
             Helper.observation = gameState.NewObservation.Observation;
 
-            RepeatedField<Unit> allUnits = observation.RawData.Units;
-            var myUnits = allUnits.Where(Unit => Unit.Owner == 1);
+            var allUnits = Helper.getAllUnits();
+            var myUnits = Helper.getMyUnits();
 
             var myMinerals = observation.PlayerCommon.Minerals;
             var myFoodUsed = observation.PlayerCommon.FoodUsed;
@@ -73,36 +73,45 @@ namespace Cletus
             //send idle workers to minerals
             if (observation.PlayerCommon.IdleWorkerCount > 0)
             {
-                ulong mineralTag = 0;
-
-                foreach (var unit in allUnits)
+                foreach (var idleWorker  in Helper.getIdleWorkers())
                 {
-                    if (unit.UnitType == (uint)UNIT_TYPEID.NEUTRAL_MINERALFIELD)
-                    {
-                        mineralTag = unit.Tag;
-                        break;
-                    }
+                    Unit nearestMineral = Helper.getNearestUnitOfUnitType(idleWorker, UNIT_TYPEID.NEUTRAL_MINERALFIELD);
+
+
+                    yield return Helper.getAction(idleWorker, ABILITY_ID.HARVEST_GATHER, nearestMineral);
+
                 }
 
+                //ulong mineralTag = 0;
 
-                foreach (var unit in myUnits)
-                {
-                    if (unit.UnitType == (uint)UNIT_TYPEID.TERRAN_SCV)
-                    {
-                        if (unit.Orders.Count() == 0)
-                        {
-                            
-                            action.ActionRaw = new ActionRaw();
-                            action.ActionRaw.ClearAction();
-                            action.ActionRaw.UnitCommand = new ActionRawUnitCommand();
-                            action.ActionRaw.UnitCommand.AbilityId = (int)ABILITY_ID.HARVEST_GATHER;
-                            action.ActionRaw.UnitCommand.TargetUnitTag = mineralTag;
+                //foreach (var unit in allUnits)
+                //{
+                //    if (unit.UnitType == (uint)UNIT_TYPEID.NEUTRAL_MINERALFIELD)
+                //    {
+                //        mineralTag = unit.Tag;
+                //        break;
+                //    }
+                //}
 
-                            action.ActionRaw.UnitCommand.UnitTags.Add(unit.Tag);
 
-                        }
-                    }
-                }
+                //foreach (var unit in myUnits)
+                //{
+                //    if (unit.UnitType == (uint)UNIT_TYPEID.TERRAN_SCV)
+                //    {
+                //        if (unit.Orders.Count() == 0)
+                //        {
+
+                //            action.ActionRaw = new ActionRaw();
+                //            action.ActionRaw.ClearAction();
+                //            action.ActionRaw.UnitCommand = new ActionRawUnitCommand();
+                //            action.ActionRaw.UnitCommand.AbilityId = (int)ABILITY_ID.HARVEST_GATHER;
+                //            action.ActionRaw.UnitCommand.TargetUnitTag = mineralTag;
+
+                //            action.ActionRaw.UnitCommand.UnitTags.Add(unit.Tag);
+
+                //        }
+                //    }
+                //}
             }
 
 
