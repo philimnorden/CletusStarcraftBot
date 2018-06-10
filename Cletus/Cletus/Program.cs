@@ -56,6 +56,8 @@ namespace Cletus
             Observation observation = gameState.NewObservation.Observation;
             //MapState map = observation.RawData.MapState;
 
+            Helper.observation = gameState.NewObservation.Observation;
+
             RepeatedField<Unit> allUnits = observation.RawData.Units;
             var myUnits = allUnits.Where(Unit => Unit.Owner == 1);
 
