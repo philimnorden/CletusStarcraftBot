@@ -59,25 +59,47 @@ namespace Cletus
             RepeatedField<Unit> allUnits = observation.RawData.Units;
             var myUnits = allUnits.Where(Unit => Unit.Owner == 1);
 
+            var myMinerals = observation.PlayerCommon.Minerals;
+            var myFoodUsed = observation.PlayerCommon.FoodUsed;
+            var myFoodCap = observation.PlayerCommon.FoodCap;
+            var myFoodFree = myFoodCap - myFoodUsed;
+
             ulong? unitTag = null;
-
-            int i = 0;
-
-            while (unitTag == null && i < allUnits.Count)
+            
+            // TODO check if we want to train scv's
+            if (true)
             {
-                if (allUnits[i].UnitType == (uint)UNIT_TYPEID.TERRAN_COMMANDCENTER)
+                // check if we can afford scv's
+                if (myMinerals >= 50 && myFoodFree >= 1)
                 {
-                    unitTag = allUnits[i].Tag;
+
+                    foreach (var unit in myUnits)
+                    {
+                        // Unit is a command center
+                        if (unit.UnitType == (uint)UNIT_TYPEID.TERRAN_COMMANDCENTER)
+                        {
+                            // Unit is not training a scv at the moment
+                            var ScvInTraining = unit.Orders.Where(Order => Order.AbilityId == (uint)ABILITY_ID.TRAIN_SCV);
+                            if (ScvInTraining.Count() == 0)
+                            {
+                                unitTag = unit.Tag;
+                            }
+
+                        }
+                    }
+
+                    if (unitTag != null)
+                    {
+                        action.ActionRaw = new ActionRaw();
+                        action.ActionRaw.ClearAction();
+                        action.ActionRaw.UnitCommand = new ActionRawUnitCommand();
+                        action.ActionRaw.UnitCommand.AbilityId = (int)ABILITY_ID.TRAIN_SCV;
+
+                        action.ActionRaw.UnitCommand.UnitTags.Add(unitTag.Value);
+                    }
                 }
-                i++;
             }
 
-            action.ActionRaw = new ActionRaw();
-            action.ActionRaw.ClearAction();
-            action.ActionRaw.UnitCommand = new ActionRawUnitCommand();
-            action.ActionRaw.UnitCommand.AbilityId = (int)ABILITY_ID.TRAIN_SCV;
-
-            action.ActionRaw.UnitCommand.UnitTags.Add(unitTag.Value);
             yield return action;
         }
 
