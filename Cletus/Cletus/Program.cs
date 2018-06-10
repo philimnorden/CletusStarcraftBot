@@ -51,8 +51,6 @@ namespace Cletus
 
         public static IEnumerable<Action> MasterAgent_MainLoop(GameState gameState)
         {
-            Action action = new Action();
-
             Observation observation = gameState.NewObservation.Observation;
             //MapState map = observation.RawData.MapState;
 
@@ -66,9 +64,10 @@ namespace Cletus
             var myFoodCap = observation.PlayerCommon.FoodCap;
             var myFoodFree = myFoodCap - myFoodUsed;
 
-            
-
-            ulong? unitTag = null;
+            int SUPPLY_DEPOT_COST = 100;
+            int SCV_COST = 50;
+            int BARRACKS_COST = 150;
+            int REFINERY_COST = 75;
 
             //send idle workers to minerals
             if (observation.PlayerCommon.IdleWorkerCount > 0)
@@ -76,42 +75,9 @@ namespace Cletus
                 foreach (var idleWorker  in Helper.getIdleWorkers())
                 {
                     Unit nearestMineral = Helper.getNearestUnitOfUnitType(idleWorker, UNIT_TYPEID.NEUTRAL_MINERALFIELD);
-
-
                     yield return Helper.getAction(idleWorker, ABILITY_ID.HARVEST_GATHER, nearestMineral);
 
                 }
-
-                //ulong mineralTag = 0;
-
-                //foreach (var unit in allUnits)
-                //{
-                //    if (unit.UnitType == (uint)UNIT_TYPEID.NEUTRAL_MINERALFIELD)
-                //    {
-                //        mineralTag = unit.Tag;
-                //        break;
-                //    }
-                //}
-
-
-                //foreach (var unit in myUnits)
-                //{
-                //    if (unit.UnitType == (uint)UNIT_TYPEID.TERRAN_SCV)
-                //    {
-                //        if (unit.Orders.Count() == 0)
-                //        {
-
-                //            action.ActionRaw = new ActionRaw();
-                //            action.ActionRaw.ClearAction();
-                //            action.ActionRaw.UnitCommand = new ActionRawUnitCommand();
-                //            action.ActionRaw.UnitCommand.AbilityId = (int)ABILITY_ID.HARVEST_GATHER;
-                //            action.ActionRaw.UnitCommand.TargetUnitTag = mineralTag;
-
-                //            action.ActionRaw.UnitCommand.UnitTags.Add(unit.Tag);
-
-                //        }
-                //    }
-                //}
             }
 
 
@@ -119,99 +85,91 @@ namespace Cletus
             if (true)
             {
                 // check if we can afford scv's
-                if (myMinerals >= 50 && myFoodFree >= 1)
+                if (myMinerals >= SCV_COST && myFoodFree >= 1)
                 {
 
-                    foreach (var unit in myUnits)
+                    foreach (var commandCenter in Helper.getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER))
                     {
-                        // Unit is a command center
-                        if (unit.UnitType == (uint)UNIT_TYPEID.TERRAN_COMMANDCENTER)
+                        if (!Helper.isOrderQueued(ABILITY_ID.TRAIN_SCV, commandCenter))
                         {
-                            // Unit is not training a scv at the moment
-                            var ScvInTraining = unit.Orders.Where(Order => Order.AbilityId == (uint)ABILITY_ID.TRAIN_SCV);
-                            if (ScvInTraining.Count() == 0)
-                            {
-                                unitTag = unit.Tag;
-                            }
-
+                            yield return Helper.getAction(commandCenter, ABILITY_ID.TRAIN_SCV);
+                            break;
                         }
-                    }
-
-                    if (unitTag != null)
-                    {
-                        action.ActionRaw = new ActionRaw();
-                        action.ActionRaw.ClearAction();
-                        action.ActionRaw.UnitCommand = new ActionRawUnitCommand();
-                        action.ActionRaw.UnitCommand.AbilityId = (int)ABILITY_ID.TRAIN_SCV;
-
-                        action.ActionRaw.UnitCommand.UnitTags.Add(unitTag.Value);
                     }
                 }
             }
 
             // Build supply depot
-            if (myFoodFree < 5 && myMinerals > 100)
+            if (myFoodFree < 5 && myMinerals > SUPPLY_DEPOT_COST && !Helper.isOrderQueued(ABILITY_ID.BUILD_SUPPLYDEPOT, UNIT_TYPEID.TERRAN_SCV))
             {
 
-                IEnumerable<UnitOrder> supplyDepotInConstruction = null;
-
-                foreach (var unit in myUnits)
+                Unit commandCenter = Helper.getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER).First();
+                if(Helper.getCollectingWorkers().Count > 0)
                 {
-                    if (unit.UnitType == (uint)UNIT_TYPEID.TERRAN_SCV)
-                    {
-                        supplyDepotInConstruction = unit.Orders.Where(Order => Order.AbilityId == (uint)ABILITY_ID.BUILD_SUPPLYDEPOT);
-                        if(supplyDepotInConstruction.Count() != 0)
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                if (supplyDepotInConstruction.Count() == 0)
-                {
-                    foreach (var unit in myUnits)
-                    {
-                        if (unit.UnitType == (uint)UNIT_TYPEID.TERRAN_SCV)
-                        {
-                            unitTag = unit.Tag;
-                            break;
-                        }
-                    }
+                    Unit worker = Helper.getCollectingWorkers().First();
 
                     var r = new Random();
 
-                    action.ActionRaw = new ActionRaw();
-                    action.ActionRaw.ClearAction();
-                    action.ActionRaw.UnitCommand = new ActionRawUnitCommand();
-                    action.ActionRaw.UnitCommand.AbilityId = (int)ABILITY_ID.BUILD_SUPPLYDEPOT;
-                    action.ActionRaw.UnitCommand.TargetWorldSpacePos = new Point2D();
-
-                    // get CC
-                    Unit commandCenter = null;
-                    foreach (var unit in myUnits)
-                    {
-                        // Unit is a command center
-                        if (unit.UnitType == (uint)UNIT_TYPEID.TERRAN_COMMANDCENTER)
-                        {
-                            commandCenter = unit;
-
-                        }
-                    }
                     var BASE_SIZE = 15;
                     var ccX = commandCenter.Pos.X + (r.Next(-1 * BASE_SIZE, BASE_SIZE));
                     var ccY = commandCenter.Pos.Y + (r.Next(-1 * BASE_SIZE, BASE_SIZE));
 
-                    action.ActionRaw.UnitCommand.TargetWorldSpacePos.X = ccX;
-                    action.ActionRaw.UnitCommand.TargetWorldSpacePos.Y = ccY;
+                    Point2D position = new Point2D();
+                    position.X = ccX;
+                    position.Y = ccY;
 
-                    action.ActionRaw.UnitCommand.UnitTags.Add(unitTag.Value);
+                    yield return Helper.getAction(worker, ABILITY_ID.BUILD_SUPPLYDEPOT, position);
                 }
+            }
+
+            // Barracks
+            if ( myMinerals > BARRACKS_COST && !Helper.isOrderQueued(ABILITY_ID.BUILD_BARRACKS, UNIT_TYPEID.TERRAN_SCV))
+            {
+                // check if we want to build barracks
+                int barracksCount = Helper.getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_BARRACKS).Count;
+                if (barracksCount < 1)
+                {
+                    if (Helper.getCollectingWorkers().Count > 0)
+                    {
+                        Unit worker = Helper.getCollectingWorkers().First();
+                        Unit commandCenter = Helper.getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER).First();
+                        var r = new Random();
+
+                        var BASE_SIZE = 15;
+                        var ccX = commandCenter.Pos.X + (r.Next(-1 * BASE_SIZE, BASE_SIZE));
+                        var ccY = commandCenter.Pos.Y + (r.Next(-1 * BASE_SIZE, BASE_SIZE));
+
+                        Point2D position = new Point2D();
+                        position.X = ccX;
+                        position.Y = ccY;
+
+                        yield return Helper.getAction(worker, ABILITY_ID.BUILD_BARRACKS, position);
+                    }
+                }
+            }
+
+            // Vespine Gas
+            if (Helper.getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_BARRACKS).Count > 0)
+            {
+                if (myMinerals > REFINERY_COST && !Helper.isOrderQueued(ABILITY_ID.BUILD_REFINERY, UNIT_TYPEID.TERRAN_SCV))
+                {
+
+                    if (Helper.getCollectingWorkers().Count > 0)
+                    {
+                        Unit worker = Helper.getCollectingWorkers().First();
+                        Unit commandCenter = Helper.getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER).First();
+
+                        Unit gas = Helper.getNearestUnitOfUnitType(commandCenter, UNIT_TYPEID.NEUTRAL_VESPENEGEYSER);
 
 
+                        yield return Helper.getAction(worker, ABILITY_ID.BUILD_REFINERY, gas);
+                    }
+                    
+                }
 
             }
 
-            yield return action;
+            yield return new Action();
         }
 
     }

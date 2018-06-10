@@ -20,7 +20,7 @@ namespace Cletus
                 return new List<Unit>();
             }
 
-            List<Unit> workers = getAllWorkers();
+            List<Unit> workers = getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_SCV);
             List<Unit> idleWorkers = new List<Unit>();
             foreach (Unit worker in workers)
             {
@@ -32,28 +32,24 @@ namespace Cletus
             return idleWorkers;
         }
 
-        public static List<Unit> getAllWorkers()
-        {
-            return getMyUnits().Where(Unit => Unit.UnitType == (uint)UNIT_TYPEID.TERRAN_SCV).ToList();
-        }
-
         public static List<Unit> getCollectingWorkers()
         {
-            var workers = getAllWorkers();
+            var workers = getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_SCV);
             var collectingWorkers = new List<Unit>();
+
+
             foreach (Unit worker in workers)
             {
-                if (worker.Orders.Any(Order => Order.AbilityId == (uint)ABILITY_ID.HARVEST_GATHER))
+                if (worker.Orders.Any(Order => Order.AbilityId == (uint)ABILITY_ID.HARVEST_GATHER_SCV))
+                {
+                    collectingWorkers.Add(worker);
+                }
+                else if (worker.Orders.Any(Order => Order.AbilityId == (uint)ABILITY_ID.HARVEST_RETURN_SCV))
                 {
                     collectingWorkers.Add(worker);
                 }
             }
             return collectingWorkers;
-        }
-
-        public static List<Unit> getAllCommandCenters()
-        {
-            return getMyUnits().Where(Unit => Unit.UnitType == (uint)UNIT_TYPEID.TERRAN_COMMANDCENTER).ToList();
         }
 
         public static Unit getNearestUnitOfUnitType(Unit unit, UNIT_TYPEID unitType)
@@ -107,6 +103,73 @@ namespace Cletus
             action.ActionRaw.UnitCommand.UnitTags.Add(unit.Tag);
 
             return action;
+        }
+
+        public static Action getAction(Unit unit, ABILITY_ID ability)
+        {
+            Action action = new Action();
+
+            action.ActionRaw = new ActionRaw();
+            action.ActionRaw.ClearAction();
+            action.ActionRaw.UnitCommand = new ActionRawUnitCommand();
+            action.ActionRaw.UnitCommand.AbilityId = (int)ability;
+
+            action.ActionRaw.UnitCommand.UnitTags.Add(unit.Tag);
+
+            return action;
+        }
+
+        public static Action getAction(Unit unit, ABILITY_ID ability, Point2D position)
+        {
+            Action action = new Action();
+
+            action.ActionRaw = new ActionRaw();
+            action.ActionRaw.ClearAction();
+            action.ActionRaw.UnitCommand = new ActionRawUnitCommand();
+            action.ActionRaw.UnitCommand.AbilityId = (int)ability;
+            action.ActionRaw.UnitCommand.TargetWorldSpacePos = position;
+
+            action.ActionRaw.UnitCommand.UnitTags.Add(unit.Tag);
+
+            return action;
+        }
+
+        public static bool isOrderQueued(ABILITY_ID ability)
+        {
+            foreach (var unit in getMyUnits())
+            {
+                if (unit.Orders.Any(Order => Order.AbilityId == (uint)ability))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static List<Unit> getAllUnitsOfUnitType(UNIT_TYPEID unitType)
+        {
+            return getMyUnits().Where(Unit => Unit.UnitType == (uint)unitType).ToList();
+        }
+
+        public static bool isOrderQueued(ABILITY_ID ability, UNIT_TYPEID unitType)
+        {
+            foreach (var unit in getMyUnits().Where(Unit => Unit.UnitType == (uint)unitType))
+            {
+                if (unit.Orders.Any(Order => Order.AbilityId == (uint)ability))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static bool isOrderQueued(ABILITY_ID ability, Unit unit)
+        {
+            if (unit.Orders.Any(Order => Order.AbilityId == (uint)ability))
+            {
+                return true;
+            }
+            return false;
         }
     }
 }
