@@ -26,7 +26,7 @@ namespace Cletus
             createInstance(),
             Race.Terran,
             MasterAgent_MainLoop),
-        Sc2Game.Participant.CreateComputer(Race.Terran, Difficulty.Hard)
+        Sc2Game.Participant.CreateComputer(Race.Terran, Difficulty.VeryEasy)
     };
 
             var gameSettings =
