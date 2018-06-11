@@ -189,8 +189,64 @@ namespace Cletus
 
             }
 
+            // build Bunker
+            if (Helper.getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_BUNKER).Count == 0)
+            {
+                // check if we can afford a bunker
+                if (myMinerals >= 100)
+                {
+                    Unit commandCenter = Helper.getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER).First();
+                    if (Helper.getCollectingWorkers().Count > 0)
+                    {
+                        Unit worker = Helper.getCollectingWorkers().First();
+
+                        // TODO place bunker next to choke point 
+                        var r = new Random();
+
+                        var BASE_SIZE = 5;
+
+                        var enemyX = gameState.GameInfo.StartRaw.StartLocations.First().X;
+                        var enemyY = gameState.GameInfo.StartRaw.StartLocations.First().Y;
+
+                        var ccX = commandCenter.Pos.X + (r.Next(-1 * BASE_SIZE, BASE_SIZE));
+                        var ccY = commandCenter.Pos.Y + (r.Next(-1 * BASE_SIZE, BASE_SIZE));
+
+                        Point2D position = new Point2D();
+                        position.X = ccX;
+                        position.Y = ccY;
+                        
+                        yield return Helper.getAction(worker, ABILITY_ID.BUILD_BUNKER, position);
+                    }
+                }
+            }
+
+            // send marines to bunker if under attack
+            if (Helper.getAllUnits().Where(Unit => Unit.Alliance == Alliance.Enemy).Count() != 0)
+            {
+                foreach (var bunker in Helper.getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_BUNKER))
+                {
+                    // if bunker is not full
+                    if (bunker.CargoSpaceTaken != bunker.CargoSpaceMax)
+                    {                      
+                        foreach (var enemy in Helper.getAllUnits().Where(Unit => Unit.Alliance == Alliance.Enemy))
+                        {
+                            // if enemy in range. Range of marines in bunker: 6
+                            if (Helper.getDistance(bunker.Pos, enemy.Pos) <= 6)
+                            {
+                                var marine = Helper.getNearestUnitOfUnitType(bunker, UNIT_TYPEID.TERRAN_MARINE);
+                                if (marine != null)
+                                {
+                                    yield return Helper.getAction(bunker, ABILITY_ID.LOAD, marine);
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
+
             // TODO check if we want to attack
-            if (true)
+            if (false)
             {
                 foreach (var marine in Helper.getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_MARINE).Where(Unit => Unit.Orders.Count == 0))
                 {
