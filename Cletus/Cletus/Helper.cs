@@ -171,5 +171,17 @@ namespace Cletus
             }
             return false;
         }
+
+        public static double getDistance(Point2D point1, Point2D point2)
+        {
+            return Math.Sqrt( Math.Pow(point2.X - point1.X, 2F) + Math.Pow(point2.Y - point1.Y,2F));
+
+        }
+
+        public static double getDistance(Point point1, Point point2)
+        {
+            return Math.Sqrt(Math.Pow(point2.X - point1.X, 2F) + Math.Pow(point2.Y - point1.Y, 2F) + Math.Pow(point2.Z - point1.Z, 2F));
+
+        }
     }
 }
