@@ -169,6 +169,39 @@ namespace Cletus
 
             }
 
+            // Build Marines
+            // TODO check if we want to train marines
+            if(Helper.getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_BARRACKS).Count > 0 && myMinerals > 200)
+            {
+                // check if we can afford marines
+                if (myMinerals >= 50 && myFoodFree >= 1)
+                {
+
+                    foreach (var barracks in Helper.getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_BARRACKS))
+                    {
+                        if (!Helper.isOrderQueued(ABILITY_ID.TRAIN_MARINE, barracks))
+                        {
+                            yield return Helper.getAction(barracks, ABILITY_ID.TRAIN_MARINE);
+                            break;
+                        }
+                    }
+                }
+
+            }
+
+            // TODO check if we want to attack
+            if (true)
+            {
+                foreach (var marine in Helper.getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_MARINE).Where(Unit => Unit.Orders.Count == 0))
+                {
+                    Point2D attackLocation = new Point2D();
+                    attackLocation.X = gameState.GameInfo.StartRaw.StartLocations.First().X;
+                    attackLocation.Y = gameState.GameInfo.StartRaw.StartLocations.First().Y;
+
+                    yield return Helper.getAction(marine,ABILITY_ID.ATTACK, attackLocation);
+                }
+            }
+
             yield return new Action();
         }
 
