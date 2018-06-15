@@ -1,6 +1,29 @@
 # CletusStarcraftBot
 
-## Todos
+## Build Order
+Barracks
+Refinery
+Barracks->Reactor
+Factory
+(increase expansion priority)
+Refinery
+Factory->Tech Labs
+Starport
+(increase harassment priority)
+Barracks
+Barracks
+(increase expansion priority)
+(increase upgrades priority)
+(increase defence in minerals priority)
+Armory
+Barracks
+Barracks
+Factory
+Starport
+
+
+
+## Todos, Notes
 Marine, Marauder, Medivac, Siege Tank Build
 ### First
 - Building SCV
