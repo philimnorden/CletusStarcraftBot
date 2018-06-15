@@ -246,7 +246,7 @@ namespace Cletus
             }
 
             // TODO check if we want to attack
-            if (false)
+            if (Helper.getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_MARINE).Count > 20)
             {
                 foreach (var marine in Helper.getAllUnitsOfUnitType(UNIT_TYPEID.TERRAN_MARINE).Where(Unit => Unit.Orders.Count == 0))
                 {
